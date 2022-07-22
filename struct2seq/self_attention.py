@@ -36,6 +36,9 @@ def cat_neighbors_nodes(h_nodes, h_neighbors, E_idx):
     return h_nn
 
 
+# This class can be used for standardization across the feature dimension according to "(X-mu)/sigma" standardization formula
+# Interestingly, by adding the operation as a module with learnable parameters, the mean and standard deviation of the normalized output
+# can be learnable
 class Normalize(nn.Module):
     def __init__(self, features, epsilon=1e-6):
         super(Normalize, self).__init__()
@@ -52,8 +55,14 @@ class Normalize(nn.Module):
         if dim != -1:
             shape = [1] * len(mu.size())
             shape[dim] = self.gain.size()[0]
+            # only the dimension to be normalized will not be 1
+            # this should be able to control which dimension of x is being manipulated by the learnt "gain" and "bias"
+            # since the other dimensions have 1 in gain and 0 in bias, those multiplications and additions should have no undersirable effects
             gain = gain.view(shape)
             bias = bias.view(shape)
+        # multiplication with gain and addition with bias is making this normalization learnable
+        # since gain and bias are both parameters of this Module
+        # As a result, the normalized output can technically have any mean and standard deviation
         return gain * (x - mu) / (sigma + self.epsilon) + bias
 
 
@@ -67,6 +76,7 @@ class TransformerLayer(nn.Module):
         self.norm = nn.ModuleList([Normalize(num_hidden) for _ in range(2)])
 
         self.attention = NeighborAttention(num_hidden, num_in, num_heads)
+        # PositionWiseFeedForward is a very simple two-layer MLP which projects from input dimension to higher and back
         self.dense = PositionWiseFeedForward(num_hidden, num_hidden * 4)
 
     def forward(self, h_V, h_E, mask_V=None, mask_attend=None):
@@ -182,7 +192,7 @@ class NeighborAttention(nn.Module):
         Returns:
             h_V:            Node update
         """
-        # Seems like each of the nodes are regarded as an instance of the batch
+        # Seems like each of the residues are regarded as an instance of the batch?
 
         # Queries, Keys, Values
         n_batch, n_nodes, n_neighbors = h_E.shape[:3]
