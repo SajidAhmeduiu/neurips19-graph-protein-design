@@ -175,6 +175,9 @@ class NeighborAttention(nn.Module):
         self.W_O = nn.Linear(num_hidden, num_hidden, bias=False)
         return
 
+    # dot-product attention weights, "attend_logits" have been set to the lowest possible floating point value available
+    # to the particular machine for the masked nodes before softmaxing, so that those node values become zero after softmax weighing, 
+    # and the corresponding values do not contribute to the center node weight update, subsequently
     def _masked_softmax(self, attend_logits, mask_attend, dim=-1):
         """ Numerically stable masked softmax """
         negative_inf = np.finfo(np.float32).min
