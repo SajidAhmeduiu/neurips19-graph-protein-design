@@ -182,6 +182,7 @@ class NeighborAttention(nn.Module):
         Returns:
             h_V:            Node update
         """
+        # Seems like each of the nodes are regarded as an instance of the batch
 
         # Queries, Keys, Values
         n_batch, n_nodes, n_neighbors = h_E.shape[:3]
